@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>regular todo</title>
+  <link rel="stylesheet" href="https://rawgit.com/tastejs/todomvc-common/v0.1.11/base.css">
+</head>
+<body>
+
+
+<div id="todoapp"></div>
+<!-- 定义模版 -->
+<script  type="template/regular" id='todo'>
+  <li r-class={ { 'completed': todo.completed, 'editing': todo.editing } }>
+    <div class="view">
+      <input class="toggle" type="checkbox" r-model={todo.completed}>
+      <label on-dblclick={todo.editing = true}>{todo.description}</label>
+      {#if completedLength}
+      <button class="destroy" on-click='remove'></button>
+      {/if}
+    </div>
+    <input id="edit" class="edit" on-blur={todo.editing = false} r-model={todo.description} autofocus>
+  </li>
+</script>
+
+<script type="template/regular" id='todomvc'>
+  <div>
+    <h1>TODOMVC</h1>
+    <input id="new-todo"
+      placeholder="What needs to be done?"
+      r-model={description}
+      on-blur={this.newTodo(description)}>
+  </div>
+  {#if !!todos.length}
+  <section id="main">
+    <input id="toggle-all" type="checkbox" r-model={allCompleted}>
+    <label for="toggle-all">Mark all as complete</label>
+    <ul id="todo-list">
+      
+      {# list this.getList(filter) as todo}
+      <todo todo={todo} on-remove={todos.splice(todo_index,1)}/>
+      {/list}
+
+    </ul>
+  </section>
+  <footer id="footer">
+    <span id="todo-count"> <strong>{activeLength}</strong>
+      {activeLength === 1  ? 'item' : 'items'} left
+    </span>
+    <ul id="filters">
+      <li> <a class="{filter === 'all' ? 'selected' : ''}" on-click={filter = 'all'}>All</a> </li>
+      <li> <a class="{filter === 'active' ? 'selected' : ''}" on-click={filter = 'active'}>Active</a> </li>
+      <li> <a class="{filter === 'completed' ? 'selected' : ''}" on-click={filter = 'completed'}>Completed</a> </li>
+    </ul>
+    <button id="clear-completed" on-click={this.clearCompleted()}>Clear completed ({completedLength})</button>
+  </footer>
+  {/if}
+</script>
+
+</body>
+<!-- 引入regularjs -->
+<script src="https://rawgit.com/regularjs/regular/master/dist/regular.js"></script>
+<script type="text/javascript">
+  const Todo = Regular.extend({
+    template: '#todo',
+    name: 'todo',
+    data: {
+      todo: {}
+    }
+  });
+  const TodoMVC = Regular.extend({
+    template: '#todomvc',
+    computed: {
+      completedLength: "this.getList('completed').length",
+      activeLength: "this.getList('active').length",
+      allCompleted: {
+        get: function(data) {
+          return data.todos.length === this.getList('completed').length 
+        },
+        set: function(value, data) {
+          data.todos.forEach(function(todo){
+            todo.completed = value;
+          });
+        }
+      }
+    },
+    getList: function(filter) {
+      if (!filter || filter === 'all') {
+        return this.data.todos;
+      } else {
+        return this.data.todos.filter(function(todo) {
+          return filter === 'completed' ? todo.completed : !todo.completed;
+        });
+      }
+    },
+    toogleAll: function(sign) {
+      this.data.todos.forEach(function(todo) {
+        todo.completed = !sign;
+      })
+    },
+    clearCompleted: function() {
+      this.data.todos = this.data.todos.filter(function(todo) {
+        return !todo.completed
+      })
+    },
+    newTodo: function(description) {
+      this.data.todos.unshift({
+        description: description
+      });
+      this.data.description = '';
+    }
+  });
+
+  const todoApp = new TodoMVC({
+    data: {
+      todos: [{
+        completed: true, description: 'sleep'
+      }, {
+        completed: false, description: 'work'
+      }]
+    }
+  }).$inject('#todoapp');
+</script>
+</html>
